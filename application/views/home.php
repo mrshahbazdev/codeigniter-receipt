@@ -6,15 +6,13 @@
 	<meta name="viewport" content="width=device-width,initial-scale=1">
 	<meta name="theme-color" content="#000000">
 	<meta name="description" content="Web App">
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w==" crossorigin="anonymous">
 	<base href="<?php echo base_url(); ?>">
 	<title>Quick Receipt - Receipt Generator</title>
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-	<link href="assets/css/main.fc9cb7b7.css" rel="stylesheet">
-	<link href="assets/css/enhanced.css" rel="stylesheet">
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+	<link href="assets/css/fonts.css?v=2" rel="stylesheet">
+	<link href="assets/vendor/fontawesome/css/all.min.css" rel="stylesheet">
+	<link href="assets/css/main.fc9cb7b7.css?v=2" rel="stylesheet">
+	<link href="assets/css/enhanced.css?v=3" rel="stylesheet">
+	<script src="assets/vendor/js/html2canvas.min.js" defer></script>
 </head>
 <?php
 	$two = $this->uri->segment(2);
@@ -110,18 +108,24 @@
 			setTimeout(function(){ t.classList.remove('show'); setTimeout(function(){ t.remove(); }, 300); }, 3000);
 		}
 
-		/* ---- font embedding for SVG export ---- */
+		/* ---- font embedding for SVG export (local fonts, cached after first use) ---- */
+		let embeddedFontCss = null;
 		async function embedFontsStyle() {
+			if (embeddedFontCss !== null) return embeddedFontCss;
 			try {
-				const cssResp = await fetch('https://fonts.googleapis.com/css2?family=Mulish:wght@400;600;700;800&display=swap');
+				const cssResp = await fetch('assets/css/fonts.css?v=2');
 				let css = await cssResp.text();
-				const urls = [...css.matchAll(/url\((https:[^)]+)\)/g)].map(m => m[1]);
+				const blocks = (css.match(/@font-face\s*\{[^}]*\}/g) || [])
+					.filter(b => /font-family:\s*'Mulish'/.test(b) && /U\+0000-00FF/.test(b));
+				css = blocks.join('\n');
+				const urls = [...css.matchAll(/url\(([^)]+)\)/g)].map(m => m[1]);
 				for (const u of urls) {
-					const buf = await (await fetch(u)).arrayBuffer();
+					const buf = await (await fetch('assets/css/' + u)).arrayBuffer();
 					let bin = '';
 					new Uint8Array(buf).forEach(b => bin += String.fromCharCode(b));
 					css = css.replace(u, 'data:font/woff2;base64,' + btoa(bin));
 				}
+				embeddedFontCss = css;
 				return css;
 			} catch (e) { return ''; }
 		}
@@ -228,7 +232,10 @@
 			var overlay = document.querySelector('.list-all-items');
 			var openBtn = document.querySelector('.list-all-btn button');
 			var closeBtn = document.querySelector('.list-close button');
-			if (overlay && openBtn) openBtn.addEventListener('click', function() { overlay.style.top = '0'; });
+			if (overlay && openBtn) openBtn.addEventListener('click', function() {
+				overlay.querySelectorAll('img[data-src]').forEach(function(img) { img.src = img.getAttribute('data-src'); img.removeAttribute('data-src'); });
+				overlay.style.top = '0';
+			});
 			if (overlay && closeBtn) closeBtn.addEventListener('click', function() { overlay.style.top = '100%'; });
 		});
 	</script>

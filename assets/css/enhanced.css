@@ -224,6 +224,7 @@ body, button, input, select, h1, h2, h3, h4, h5, p, span, a, label {
 /* ================= "All templates" overlay ================= */
 .list-all-items {
   background: var(--dark-panel) !important;
+  z-index: 200 !important;
 }
 .list-all-items .list-close button {
   background: var(--primary) !important;
